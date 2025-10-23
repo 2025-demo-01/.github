@@ -1,149 +1,57 @@
-# 2025-demo-01
+# 🌐 2025-demo-01 — Digital Asset Exchange Infra (2025-09-26~ing)
 
-> 디지털 자산 거래소 인프라를 실험적으로 구축하는 나만의 실험실... 
-> 모든 서비스는 **쿠버네티스 기반**이며, **IaC(Terraform)** 로 완전히 자동화해야한다.  
-## 한마디로 정리하자면...
-> “ 24/365 멈추지 않는 그런 서비스 인프라를 코드로 관리하겠어.”  
-> 장애, 보안, 확장성, 복구, 모든 걸 자동화해버리는 나만의....실험실..
-> (바이낸스가 놀랄지도 몰라...) 왜냐고? GPT가 바이낸스구조로 도와준다 했다고. 
-
----
-
-## SophieLab 목표
-
-- **목표** 24/365 무중단 서비스 인프라  
-- **핵심 가치** 코드로 관리되는 신뢰성, 보안성, 복구 가능성  
-- **배포 전략** GitOps + ArgoCD + Flagger + Istio Canary  
-- **운영 환경** dev / stg / prod (완전 격리형 환경)
+> “24/365 멈추지 않는 거래소 인프라를 코드로 운영한다.”
+> 
+> 
+> Kubernetes × Terraform × Argo CD 기반, 
+> 
+> **실제 거래소 수준은 아니지만 도전적인 SophieLABs.**
+> 
 
 ---
 
-## Repository 12개가 넘을 거다.
+## 핵심 목표!
 
-### infra-terraform
-인프라 전반을 Terraform으로 관리한다.
-- EKS, MSK, Aurora, ClickHouse, Opencost, DR 전부 코드화  
-- `envs/{dev,stg,prod}` 구조로 multistage 배포  
-- Karpenter, IRSA, Route53 Failover 등 포함  
-- modules 기반으로 유지보수성 강화
+- Multi-env (dev/stg/prod) GitOps 완전 자동화
+- sync-wave 기반 **배포 순서 시각화 (mesh→policy→services→DR→observability)**
+- Secret은 전부 **SOPS + AGE + IRSA SSM 연동**
+- CI 단계별 **kubeconform / yamllint / trivy scan 자동 검증**
+- DR 리허설 / Route53 failover 시뮬레이션 코드화
+- Kyverno + OPA 기반 운영 정책 준수
 
----
+## System Overview
 
-### platform-argocd
-GitOps Control Tower.
-- ArgoCD App-of-Apps 구조  
-- 서비스 별(Trading, Wallet, Risk, Matching) 배포 정의  
-- targetRevision 고정으로 환경별 안정성 확보  
-- 운영자 승인 후만 sync 가능 (manual sync policy)
+<img width="1024" height="1024" alt="Image" src="https://github.com/user-attachments/assets/0bae4e68-d010-4308-bd45-3aa44d5ba2cd" />
 
 ---
 
-### observability-stack
-Monitoring / Logging 전체 Stack.
-- Prometheus, Loki, Tempo, Grafana  
-- SLO/SLI 기반 알람 + Error budget burn 계산  
-- eBPF 기반 이상탐지용 규칙 포함  
-- Grafana Dashboard 일괄 관리 (JSON)
+## Repository (In Progress!! )
+
+| Category | Repository | Description |
+| --- | --- | --- |
+| Control Tower | [platform-argocd](https://github.com/2025-demo-01/platform-argocd?utm_source=chatgpt.com) | Argo CD App-of-Apps, sync-wave 규칙 정립 (10→90). |
+|  Infra IaC | [infra-terraform](https://github.com/2025-demo-01/infra-terraform?utm_source=chatgpt.com) | AWS EKS/MSK/Aurora/ClickHouse 모듈화 + Multi-stage env 구성. |
+|  API Gateway | [svc-gateway](https://github.com/2025-demo-01/svc-gateway) | Istio + Envoy + JWT 인증, RateLimit + Canary 배포. |
+|  Trading API | [svc-trading-api](https://github.com/2025-demo-01/svc-trading-api) | 주문 처리, Kafka publish, trace-id 헤더 전파. |
+| Matching Engine | [svc-matching-engine](https://github.com/2025-demo-01/svc-matching-engine) | Rust 기반 저지연 엔진, NUMA-aware, Kafka/ClickHouse 연동. |
+| Wallet Service | [svc-wallet](https://github.com/2025-demo-01/svc-wallet) | FastAPI + Kafka 소비, MPC mock, Aurora 잔액관리. |
+| Risk Control | [svc-risk-control](https://github.com/2025-demo-01/svc-risk-control) | 실시간 한도/리스크 시뮬레이션 (Kafka Stream + Alert hook). |
+| Observability | [observability-stack](https://github.com/2025-demo-01/observability-stack) | Prometheus/Loki/Tempo + eBPF 이상탐지 + Grafana 대시보드. |
+|  Policy as Code | [policy-as-code](https://github.com/2025-demo-01/policy-as-code) | Kyverno/OPA + 이미지 서명 + 네임스페이스 격리. |
+| DR / Chaos Test | [tests-and-dr](https://github.com/2025-demo-01/tests-and-dr) | RPO/RTO probe + DLQ reprocess + Failover rehearsal. |
+| Data Pipeline | [data-pipeline](https://github.com/2025-demo-01/data-pipeline) | Debezium → Kafka → Flink/Faust → ClickHouse ETL. |
+| Architecture Docs | [exchange-architecture](https://github.com/2025-demo-01/exchange-architecture) | 전체 시스템 다이어그램, SLO/SLA 문서화. |
 
 ---
 
-### policy-as-code
-보안 정책 통합 관리.
-- Kyverno + Gatekeeper + OPA 규칙  
-- Trivy 이미지 스캔, SBOM 검증, cosign 서명 필수  
-- SOPS로 Secret 암호화  
-- 공급망 보안(Supply Chain Security) 자동 검증 pipeline 포함
+## 앞으로 계속 해야하는거 ! (계속 적어나가야함)
+
+- [ ]  svc-risk-control → Kafka Stream 기반 실시간 리스크 시뮬레이터
+- [ ]  observability-stack → wallet/matching 지표 대시보드 통합
+- [ ]  exchange-architecture → 시각적 다이어그램 + 시스템 문서화
+- [ ]  FinOps (Opencost) 및 SLO Error Budget tracking 추가
+- [ ]  Argo Rollouts 기반 Blue/Green 배포 실험
 
 ---
 
-### svc-matching-engine
-거래 매칭 엔진.
-- Rust 기반 저지연 처리  
-- CPU pinning / NUMA-aware Pod 설정  
-- HPA + PriorityClass 적용으로 HotPass 보장  
-- p95 latency 목표: ≤ 50ms
-
----
-
-### svc-trading-api
-거래 API Gateway.
-- Go 기반, Istio mTLS + JWT 인증  
-- Flagger canary Deploy  
-- SLO 측정 지표: API latency, error rate  
-- ExternalDNS + ALB Controller 연동
-
----
-
-### svc-wallet
-입출금 지갑 서비스.
-- Python(FastAPI) 기반  
-- Kafka/Redis 기반 트랜잭션 큐  
-- SOPS 암호화된 Secret (MPC/HSM mock 포함)  
-- Withdraw Queue Delay SLA: p95 ≤ 120s
-
----
-
-### svc-risk-control
-위험 관리 서비스.
-- Kafka Stream 소비 + 실시간 Risk 계산  
-- Flink/Faust 기반 파이프라인 연동  
-- Alert → Slack/Webhook 자동 통보  
-- 정책 위반 시 거래 차단 Simulation 포함
-
----
-
-### svc-gateway
-내부 서비스 진입점(API Gateway).
-- Istio Gateway + Envoy RateLimit Service  
-- Policy Enforcement Sidecar  
-- 인증, 로깅, 라우팅 전담  
-- Geo Routing + Cloudflare WAF 연계 가능
-
----
-
-### data-pipeline
-데이터 파이프라인 관리.
-- Debezium → Kafka → Flink/Faust → ClickHouse  
-- CDC, 스트리밍 분석, 거래 Log 적재  
-- ETL Job 자동화 (Argo Workflow 기반)
-
----
-
-### tests-and-dr
-장애 대응 및 DR 자동화.
-- RPO/RTO 측정 및 검증  
-- Route53 Failover 테스트  
-- Chaos Mesh 기반 장애 주입 시나리오  
-- DR 리허설 주기적 실행(CronJob)
-
----
-
-## 기술 스택 요약
-
-| 말만번지르 |  기술 |
-|------|------------|
-| **Infra as Code** | Terraform, AWS(EKS, MSK, Aurora, KMS, Route53) |
-| **GitOps** | ArgoCD, Helm, Kustomize |
-| **Observability** | Prometheus, Grafana, Loki, Tempo, Alertmanager |
-| **Security** | Kyverno, OPA, Trivy, cosign, SOPS, Vault |
-| **Scalability** | Karpenter, HPA, Spot/OnDemand 자동 조합 |
-| **Resilience** | Route53 Failover, Aurora Global DB, DR Automation |
-| **Delivery** | Flagger, Istio, Blue-Green/Canary |
-| **Data Pipeline** | Kafka, Flink/Faust, ClickHouse |
-| **Wallet Security** | MPC/HSM mock, SOPS Secret, Redis Queue |
-| **Runtime Protection** | Falco, eBPF-based anomaly detection |
-
----
-
-## 현재 진행 중
-
-- [x] Terraform 기반 prod 환경 완성 (`infra-terraform/envs/prod`)
-- [x] ArgoCD App-of-Apps 구조 구성
-- [x] Observability Stack (v0.9.0) 적용
-- [ ] Flagger + Istio Canary 정책 세부 튜닝 중
-- [ ] Wallet 서비스 HSM mock 강화 예정
-- [ ] Multi-Region DR rehearsal 주간화 목표
-
----
-
-
+마지막 업데이트일 : 2025-10-23 16:35 KST
