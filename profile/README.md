@@ -1,50 +1,57 @@
-# 2025-demo-01
+# 🌐 2025-demo-01 — Digital Asset Exchange Infra
+##### 마지막 업데이트일 : 2025-10-23 16:35 KST   / (2025-09-26~ing)
 
-> 디지털 자산 거래소 인프라를 실험적으로 구축하는 나만의 실험실... 
-> 모든 서비스는 **Kubernetes 기반**이며, **IaC(Terraform)** 로 완전히 자동화해야한다.  
-## 한마디로 정리하자면...
-> “ 24/365 멈추지 않는 그런 서비스 인프라를 코드로 관리하겠어.”  
-> 장애, 보안, 확장성, 복구, 모든 걸 자동화해버리는 나만의....실험실..
-> (바이낸스가 놀랄지도 몰라...) 왜냐고? GPT가 바이낸스구조로 도와준다 했다고. 
+> “24/365 멈추지 않는 거래소 인프라를 코드로 운영한다.”
+> 
+> 
+> Kubernetes × Terraform × Argo CD 기반, 
+> 
+> **실제 거래소 수준은 아니지만 도전적인 SophieLABs.**
+> 
 
 ---
-```markdown
-[Client] 
-  │ HTTP(S)
-  ▼
-[svc-gateway  (Istio Ingress + JWT + RateLimit)]
-  │  routes (Istio VS)
-  ├──────────────▶ [svc-trading-api  (REST/gRPC)]
-  │                    ├─ produce ▶ Kafka (MSK): orders.in
-  │                    └─ read/write ▶ Aurora (orders, accounts)
-  │
-  └──────────────▶ [svc-wallet      (FastAPI)]
-                       ├─ consume ◀ Kafka: withdraw.req
-                       ├─ HSM/MPC (mock) 서명
-                       └─ read/write ▶ Aurora (balances)
-                                │
-                                ▼
-                     [svc-matching-engine (Rust)]
-                       ├─ consume ◀ Kafka: orders.in
-                       ├─ produce ▶ Kafka: trades.out, book.events
-                       └─ ClickHouse insert (ticks/logs)
-                                │
-                                ▼
-                     [svc-risk-control]
-                       ├─ consume ◀ Kafka: orders.in, trades.out
-                       ├─ fetch ▶ Redis/Feature Store
-                       └─ decision ▶ Kafka: risk.decisions
-                                
-Infra (Terraform):
-  EKS + MSK + Aurora + ClickHouse + SSM + IAM(IRSA) + ALB + Route53(+ARC)
-GitOps (platform-argocd):
-  App-of-Apps로 모든 서비스/정책/관찰성 배포
-Observability:
-  Prometheus(/metrics), Loki(stdout), Tempo(Trace), Grafana 대시보드
-Policy-as-Code:
-  Kyverno/OPA → 이미지서명/PSP/네트워크/Secrets 강제
-Tests-and-DR:
-  ChaosMesh, ARC 토글 리허설, Route53 Failover
 
-```
+## 핵심 목표!
+
+- Multi-env (dev/stg/prod) GitOps 완전 자동화
+- sync-wave 기반 **배포 순서 시각화 (mesh→policy→services→DR→observability)**
+- Secret은 전부 **SOPS + AGE + IRSA SSM 연동**
+- CI 단계별 **kubeconform / yamllint / trivy scan 자동 검증**
+- DR 리허설 / Route53 failover 시뮬레이션 코드화
+- Kyverno + OPA 기반 운영 정책 준수
+
+## System Overview
+
+<img width="1024" height="1024" alt="Image" src="https://github.com/user-attachments/assets/0bae4e68-d010-4308-bd45-3aa44d5ba2cd" />
+
+---
+
+## Repository (In Progress!! )
+
+| Category | Repository | Description |
+| --- | --- | --- |
+| Control Tower | [platform-argocd](https://github.com/2025-demo-01/platform-argocd?utm_source=chatgpt.com) | Argo CD App-of-Apps, sync-wave 규칙 정립 (10→90). |
+|  Infra IaC | [infra-terraform](https://github.com/2025-demo-01/infra-terraform?utm_source=chatgpt.com) | AWS EKS/MSK/Aurora/ClickHouse 모듈화 + Multi-stage env 구성. |
+|  API Gateway | [svc-gateway](https://github.com/2025-demo-01/svc-gateway) | Istio + Envoy + JWT 인증, RateLimit + Canary 배포. |
+|  Trading API | [svc-trading-api](https://github.com/2025-demo-01/svc-trading-api) | 주문 처리, Kafka publish, trace-id 헤더 전파. |
+| Matching Engine | [svc-matching-engine](https://github.com/2025-demo-01/svc-matching-engine) | Rust 기반 저지연 엔진, NUMA-aware, Kafka/ClickHouse 연동. |
+| Wallet Service | [svc-wallet](https://github.com/2025-demo-01/svc-wallet) | FastAPI + Kafka 소비, MPC mock, Aurora 잔액관리. |
+| Risk Control | [svc-risk-control](https://github.com/2025-demo-01/svc-risk-control) | 실시간 한도/리스크 시뮬레이션 (Kafka Stream + Alert hook). |
+| Observability | [observability-stack](https://github.com/2025-demo-01/observability-stack) | Prometheus/Loki/Tempo + eBPF 이상탐지 + Grafana 대시보드. |
+|  Policy as Code | [policy-as-code](https://github.com/2025-demo-01/policy-as-code) | Kyverno/OPA + 이미지 서명 + 네임스페이스 격리. |
+| DR / Chaos Test | [tests-and-dr](https://github.com/2025-demo-01/tests-and-dr) | RPO/RTO probe + DLQ reprocess + Failover rehearsal. |
+| Data Pipeline | [data-pipeline](https://github.com/2025-demo-01/data-pipeline) | Debezium → Kafka → Flink/Faust → ClickHouse ETL. |
+| Architecture Docs | [exchange-architecture](https://github.com/2025-demo-01/exchange-architecture) | 전체 시스템 다이어그램, SLO/SLA 문서화. |
+
+---
+
+## 앞으로 계속 해야하는거 ! (계속 적어나가야함)
+
+- [ ]  svc-risk-control → Kafka Stream 기반 실시간 리스크 시뮬레이터
+- [ ]  observability-stack → wallet/matching 지표 대시보드 통합
+- [ ]  exchange-architecture → 시각적 다이어그램 + 시스템 문서화
+- [ ]  FinOps (Opencost) 및 SLO Error Budget tracking 추가
+- [ ]  Argo Rollouts 기반 Blue/Green 배포 실험
+
+---
 
